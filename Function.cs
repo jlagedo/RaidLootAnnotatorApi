@@ -27,6 +27,7 @@ public class Function : IHttpFunction
     var reqSecret = context.Request.Headers["secretkey"].ToString();
     if (string.IsNullOrEmpty(envSecret) || reqSecret != envSecret)
     {
+      _logger.LogWarning("Unauthorized request: secret key mismatch or missing. Provided: '{ReqSecret}'", reqSecret);
       context.Response.StatusCode = 401;
       await context.Response.WriteAsync("Unauthorized");
       return;
