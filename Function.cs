@@ -23,7 +23,7 @@ public class Function : IHttpFunction
   public async Task HandleAsync(HttpContext context)
   {
     // Secret key check
-    var envSecret = System.Environment.GetEnvironmentVariable("secrect_key");
+    var envSecret = System.Environment.GetEnvironmentVariable("secret_key"); // fixed spelling
     var reqSecret = context.Request.Headers["secretkey"].ToString();
     if (string.IsNullOrEmpty(envSecret) || reqSecret != envSecret)
     {
