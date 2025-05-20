@@ -25,7 +25,7 @@ public class Function : IHttpFunction
     var request = context.Request;
     var path = request.Path.Value?.ToLower();
 
-    if (path == "/static" && request.Method == "POST")
+    if (path == "/staticmember" && request.Method == "POST")
     {
       await HandlePostStaticAsync(context);
       return;
@@ -54,31 +54,63 @@ public class Function : IHttpFunction
         return;
       }
 
-      var entity = new Entity
+      // Try to find existing entity by Name and StaticGUID
+      var query = new Query("StaticTeammate")
       {
-        Key = _db.CreateKeyFactory("StaticTeammate").CreateIncompleteKey(),
-        ["Name"] = teammate.Name,
-        ["StaticGUID"] = teammate.StaticGUID,
-        ["EarsValue"] = teammate.EarsValue,
-        ["NeckValue"] = teammate.NeckValue,
-        ["WristsValue"] = teammate.WristsValue,
-        ["RingValue"] = teammate.RingValue,
-        ["WeaponValue"] = teammate.WeaponValue,
-        ["HeadValue"] = teammate.HeadValue,
-        ["BodyValue"] = teammate.BodyValue,
-        ["HandsValue"] = teammate.HandsValue,
-        ["LegsValue"] = teammate.LegsValue,
-        ["FeetValue"] = teammate.FeetValue,
-        ["WeaponTokenValue"] = teammate.WeaponTokenValue,
-        ["WeaponUpgradeValue"] = teammate.WeaponUpgradeValue,
-        ["AccUpgradeValue"] = teammate.AccUpgradeValue,
-        ["GearUpgradeValue"] = teammate.GearUpgradeValue
+        Filter = Filter.And(
+          Filter.Equal("Name", teammate.Name),
+          Filter.Equal("StaticGUID", teammate.StaticGUID)
+        )
       };
 
-      await _db.InsertAsync(entity);
+      var results = await _db.RunQueryAsync(query);
+      Entity entity;
+      bool isUpdate = false;
 
-      context.Response.StatusCode = 201;
-      await context.Response.WriteAsync("Inserted");
+      if (results.Entities.Count > 0)
+      {
+        // Update existing entity
+        entity = results.Entities[0];
+        isUpdate = true;
+      }
+      else
+      {
+        // Insert new entity
+        entity = new Entity
+        {
+          Key = _db.CreateKeyFactory("StaticTeammate").CreateIncompleteKey()
+        };
+      }
+
+      entity["Name"] = teammate.Name;
+      entity["StaticGUID"] = teammate.StaticGUID;
+      entity["EarsValue"] = teammate.EarsValue;
+      entity["NeckValue"] = teammate.NeckValue;
+      entity["WristsValue"] = teammate.WristsValue;
+      entity["RingValue"] = teammate.RingValue;
+      entity["WeaponValue"] = teammate.WeaponValue;
+      entity["HeadValue"] = teammate.HeadValue;
+      entity["BodyValue"] = teammate.BodyValue;
+      entity["HandsValue"] = teammate.HandsValue;
+      entity["LegsValue"] = teammate.LegsValue;
+      entity["FeetValue"] = teammate.FeetValue;
+      entity["WeaponTokenValue"] = teammate.WeaponTokenValue;
+      entity["WeaponUpgradeValue"] = teammate.WeaponUpgradeValue;
+      entity["AccUpgradeValue"] = teammate.AccUpgradeValue;
+      entity["GearUpgradeValue"] = teammate.GearUpgradeValue;
+
+      if (isUpdate)
+      {
+        await _db.UpdateAsync(entity);
+        context.Response.StatusCode = 200;
+        await context.Response.WriteAsync("Updated");
+      }
+      else
+      {
+        await _db.InsertAsync(entity);
+        context.Response.StatusCode = 201;
+        await context.Response.WriteAsync("Inserted");
+      }
     }
     catch (JsonException ex)
     {
