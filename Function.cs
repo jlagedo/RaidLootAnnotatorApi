@@ -73,11 +73,13 @@ public class Function : IHttpFunction
       var results = await _db.RunQueryAsync(query);
       Entity entity;
       bool isUpdate = false;
+      var now = System.DateTime.UtcNow;
 
       if (results.Entities.Count > 0)
       {
         entity = results.Entities[0];
         isUpdate = true;
+        entity["LastUpdatedDate"] = now;
       }
       else
       {
@@ -85,6 +87,8 @@ public class Function : IHttpFunction
         {
           Key = _db.CreateKeyFactory("StaticTeammate").CreateIncompleteKey()
         };
+        entity["CreationDate"] = now;
+        entity["LastUpdatedDate"] = now;
       }
 
       entity["Name"] = teammate.Name;
@@ -196,11 +200,14 @@ public class Function : IHttpFunction
       }
 
       var guid = System.Guid.NewGuid().ToString();
+      var now = System.DateTime.UtcNow;
       var entity = new Entity
       {
         Key = _db.CreateKeyFactory("Static").CreateIncompleteKey(),
         ["Name"] = payload.Name,
-        ["StaticGUID"] = guid
+        ["StaticGUID"] = guid,
+        ["CreationDate"] = now,
+        ["LastUpdatedDate"] = now
       };
 
       await _db.InsertAsync(entity);
