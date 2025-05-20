@@ -61,7 +61,8 @@ public class Function : IHttpFunction
         Filter = Filter.And(
           Filter.Equal("Name", teammate.Name),
           Filter.Equal("StaticGUID", teammate.StaticGUID)
-        )
+        ),
+        Limit = 1 // Only fetch one entity for update
       };
 
       var results = await _db.RunQueryAsync(query);
