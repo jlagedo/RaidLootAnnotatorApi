@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using Google.Cloud.Datastore.V1;
 
 namespace HelloHttp;
-
+/// just a simple function to test the Google Cloud Function
 public class Function : IHttpFunction
 {
   private readonly ILogger _logger;
