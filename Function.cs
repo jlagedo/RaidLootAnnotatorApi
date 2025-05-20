@@ -61,6 +61,20 @@ public class Function : IHttpFunction
         return;
       }
 
+      // Verify if Static exists before inserting/updating StaticTeammate
+      var staticQuery = new Query("Static")
+      {
+        Filter = Filter.Equal("StaticGUID", teammate.StaticGUID),
+        Limit = 1
+      };
+      var staticResult = await _db.RunQueryAsync(staticQuery);
+      if (staticResult.Entities.Count == 0)
+      {
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsync("Static with provided StaticGUID does not exist");
+        return;
+      }
+
       var query = new Query("StaticTeammate")
       {
         Filter = Filter.And(
