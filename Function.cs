@@ -37,6 +37,12 @@ public class Function : IHttpFunction
       return;
     }
 
+    if (path == "/static" && request.Method == "POST")
+    {
+      await HandleCreateStaticAsync(context);
+      return;
+    }
+
     context.Response.StatusCode = 404;
     await context.Response.WriteAsync("Not found");
   }
@@ -55,14 +61,13 @@ public class Function : IHttpFunction
         return;
       }
 
-      // Try to find existing entity by Name and StaticGUID
       var query = new Query("StaticTeammate")
       {
         Filter = Filter.And(
           Filter.Equal("Name", teammate.Name),
           Filter.Equal("StaticGUID", teammate.StaticGUID)
         ),
-        Limit = 1 // Only fetch one entity for update
+        Limit = 1
       };
 
       var results = await _db.RunQueryAsync(query);
@@ -71,13 +76,11 @@ public class Function : IHttpFunction
 
       if (results.Entities.Count > 0)
       {
-        // Update existing entity
         entity = results.Entities[0];
         isUpdate = true;
       }
       else
       {
-        // Insert new entity
         entity = new Entity
         {
           Key = _db.CreateKeyFactory("StaticTeammate").CreateIncompleteKey()
@@ -180,6 +183,44 @@ public class Function : IHttpFunction
     }
   }
 
+  private async Task HandleCreateStaticAsync(HttpContext context)
+  {
+    try
+    {
+      var payload = await JsonSerializer.DeserializeAsync<CreateStaticRequest>(context.Request.Body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      if (payload == null || string.IsNullOrWhiteSpace(payload.Name))
+      {
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsync("Missing or invalid name");
+        return;
+      }
+
+      var guid = System.Guid.NewGuid().ToString();
+      var entity = new Entity
+      {
+        Key = _db.CreateKeyFactory("Static").CreateIncompleteKey(),
+        ["Name"] = payload.Name,
+        ["StaticGUID"] = guid
+      };
+
+      await _db.InsertAsync(entity);
+
+      context.Response.ContentType = "application/json";
+      await context.Response.WriteAsync(JsonSerializer.Serialize(new { guid }));
+    }
+    catch (JsonException)
+    {
+      context.Response.StatusCode = 400;
+      await context.Response.WriteAsync("Invalid JSON");
+    }
+    catch (System.Exception ex)
+    {
+      _logger.LogError(ex, "POST /static: Unexpected error");
+      context.Response.StatusCode = 500;
+      await context.Response.WriteAsync("Internal server error");
+    }
+  }
+
   private StaticTeammate EntityToStaticTeammate(Entity entity)
   {
     var p = entity.Properties;
@@ -223,4 +264,9 @@ public class StaticTeammate
   public int WeaponUpgradeValue { get; set; } = 0;
   public int AccUpgradeValue { get; set; } = 0;
   public int GearUpgradeValue { get; set; } = 0;
+}
+
+internal class CreateStaticRequest
+{
+  public string Name { get; set; } = string.Empty;
 }
