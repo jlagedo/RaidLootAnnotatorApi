@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using Google.Cloud.Datastore.V1;
 
 namespace HelloHttp;
-/// just a simple function to test the Google Cloud Function
+
 public class Function : IHttpFunction
 {
   private readonly ILogger _logger;
@@ -37,7 +37,8 @@ public class Function : IHttpFunction
       return;
     }
 
-    await context.Response.WriteAsync("Hello!");
+    context.Response.StatusCode = 404;
+    await context.Response.WriteAsync("Not found");
   }
 
   private async Task HandlePostStaticAsync(HttpContext context)
@@ -160,6 +161,13 @@ public class Function : IHttpFunction
         teammates.Add(EntityToStaticTeammate(entity));
       }
 
+      if (teammates.Count == 0)
+      {
+        context.Response.StatusCode = 404;
+        await context.Response.WriteAsync("No teammates found for the provided guid");
+        return;
+      }
+
       context.Response.ContentType = "application/json";
       await context.Response.WriteAsync(JsonSerializer.Serialize(teammates));
     }
@@ -200,20 +208,16 @@ public class StaticTeammate
 {
   public string Name { get; set; } = string.Empty;
   public string StaticGUID { get; set; } = string.Empty;
-  //acc
   public int EarsValue { get; set; } = 0;
   public int NeckValue { get; set; } = 0;
   public int WristsValue { get; set; } = 0;
   public int RingValue { get; set; } = 0;
-  // gear
   public int WeaponValue { get; set; } = 0;
   public int HeadValue { get; set; } = 0;
   public int BodyValue { get; set; } = 0;
   public int HandsValue { get; set; } = 0;
   public int LegsValue { get; set; } = 0;
   public int FeetValue { get; set; } = 0;
-
-  // upgrades
   public int WeaponTokenValue { get; set; } = 0;
   public int WeaponUpgradeValue { get; set; } = 0;
   public int AccUpgradeValue { get; set; } = 0;
