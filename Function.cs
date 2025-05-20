@@ -22,6 +22,16 @@ public class Function : IHttpFunction
 
   public async Task HandleAsync(HttpContext context)
   {
+    // Secret key check
+    var envSecret = System.Environment.GetEnvironmentVariable("secrect_key");
+    var reqSecret = context.Request.Headers["secretkey"].ToString();
+    if (string.IsNullOrEmpty(envSecret) || reqSecret != envSecret)
+    {
+      context.Response.StatusCode = 401;
+      await context.Response.WriteAsync("Unauthorized");
+      return;
+    }
+
     var request = context.Request;
     var path = request.Path.Value?.ToLower();
 
